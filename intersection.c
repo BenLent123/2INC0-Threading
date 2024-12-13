@@ -78,7 +78,7 @@ static void* manage_light(void* arg)
 		Arrival curr_arrival = curr_arrivals[i][j][k];
 	
 		//Wait on semaphore, which wraps an atomic expression
-		sem_wait(semaphores[i][j]);
+		sem_wait(&semaphores[i][j]);
 		while (pthread_mutex_lock(&m)) { /* an error has occurred */
 			perror("pthread_mutex_lock");
 		}
