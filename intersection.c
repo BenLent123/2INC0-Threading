@@ -127,7 +127,7 @@ int main(int argc, char * argv[])
 	//Creates 16 threads, for now. INVESTIGATE HOW MANHY SHOULD BE MADE
     int        thr_id[4][4];         /* thread ID for the newly created thread */
     pthread_t  p_thread[4][4];       /* thread's structure                     */
-  
+	pthread_t  supply_arrivals_thread;
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 4; j++){
 			/* create a new thread that will execute 'do_loop()' */
@@ -135,10 +135,11 @@ int main(int argc, char * argv[])
 			}
 	}
 
+	int thread_id = pthread_create(&supply_arrivals_thread, NULL, supply_arrivals);
 	// TODO: create a thread that executes supply_arrivals
 
 	// TODO: wait for all threads to finish
-	
+	pthread_join(&supply_arrivals_thread, NULL);
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 4; j++){
 			/* create a new thread that will execute 'do_loop()' */
