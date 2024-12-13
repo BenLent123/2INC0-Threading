@@ -66,11 +66,13 @@ static void* supply_arrivals()
  */
 static void* manage_light(void* arg)
 {
+
+  int* args = (int*)arg;
 	//extract args from arg pointer
-	int i = arg[0];
-	int j = arg[1];
+	int i = args[0];
+	int j = args[1];
 	int k = 0;
-	pthread_mutex_t m = arg[2];
+  pthread_mutex_t* m = (pthread_mutex_t*)args[2];
 	
 	while(1){
 		//lane information is passed around as i,j
@@ -78,7 +80,7 @@ static void* manage_light(void* arg)
 		Arrival curr_arrival = curr_arrivals[i][j][k];
 	
 		//Wait on semaphore, which wraps an atomic expression
-		sem_wait(semaphores[i][j]);
+		sem_wait(&semaphores[i][j]);
 		while (pthread_mutex_lock(&m)) { /* an error has occurred */
 			perror("pthread_mutex_lock");
 		}
