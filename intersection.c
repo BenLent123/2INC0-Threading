@@ -86,7 +86,9 @@ static void* manage_light(void* arg)
 		
 		sleep(CROSS_TIME);
 		
-		
+		while (pthread_mutex_unlock(&m)) { /* an error has occurred */
+			perror("pthread_mutex_unlock");
+		}
 		
 	}
 	
