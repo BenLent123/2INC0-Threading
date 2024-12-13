@@ -75,7 +75,7 @@ static void* manage_light(void* arg)
 	while(1){
 		//lane information is passed around as i,j
 		//Extract lane information. Access need not be mutxed
-		curr_arrival = curr_arrivals[i][j][k];
+		Arrival curr_arrival = curr_arrivals[i][j][k];
 	
 		//Wait on semaphore, which wraps an atomic expression
 		sem_wait(semaphores[i][j]);
@@ -84,10 +84,14 @@ static void* manage_light(void* arg)
 		}
 		//make traffic light turn green
 		
+		sleep(CROSS_TIME);
 		
-		
-		
+		while (pthread_mutex_unlock(&m)) { /* an error has occurred */
+			perror("pthread_mutex_unlock");
+		}
 	}
+	
+	pthread_exit(NULL);
 	
   // TODO:
   // while not all arrivals have been handled, repeatedly:
@@ -104,27 +108,42 @@ static void* manage_light(void* arg)
 
 int main(int argc, char * argv[])
 {
-	//BASIC SOLUTION
+	//BASIC SOLUTION USES ONLY 1 MUTEX
 	pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
-
 	
-  // create semaphores to wait/signal for arrivals
-  for (int i = 0; i < 4; i++)
-  {
-    for (int j = 0; j < 4; j++)
-    {
-      sem_init(&semaphores[i][j], 0, 0);
-    }
-  }
+	
+	// create semaphores to wait/signal for arrivals
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			sem_init(&semaphores[i][j], 0, 0);
+		}
+	}
 
-  // start the timer
-  start_time();
+	// start the timer
+	start_time();
   
-  // TODO: create a thread per traffic light that executes manage_light
+  
+	//Creates 16 threads, for now. INVESTIGATE HOW MANHY SHOULD BE MADE
+    int        thr_id[4][4];         /* thread ID for the newly created thread */
+    pthread_t  p_thread[4][4];       /* thread's structure                     */
+  
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			/* create a new thread that will execute 'do_loop()' */
+			thr_id = pthread_create(&p_thread[i][j], NULL, manage_light);
+			}
+	}
 
-  // TODO: create a thread that executes supply_arrivals
+	// TODO: create a thread that executes supply_arrivals
 
-  // TODO: wait for all threads to finish
+	// TODO: wait for all threads to finish
+	
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			/* create a new thread that will execute 'do_loop()' */
+			pthread_join(&p_thread[i][j], NULL);
+			}
+	}
 
   // destroy semaphores
   for (int i = 0; i < 4; i++)
