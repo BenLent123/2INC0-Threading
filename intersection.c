@@ -66,6 +66,28 @@ static void* supply_arrivals()
  */
 static void* manage_light(void* arg)
 {
+	//extract args from arg pointer
+	int i = arg[0];
+	int j = arg[1];
+	int k = 0;
+	pthread_mutex_t m = arg[2];
+	
+	while(1){
+		//lane information is passed around as i,j
+		//Extract lane information. Access need not be mutxed
+		curr_arrival = curr_arrivals[i][j][k];
+	
+		//Wait on semaphore, which wraps an atomic expression
+		sem_wait(semaphores[i][j]);
+		while (pthread_mutex_lock(&m)) { /* an error has occurred */
+			perror("pthread_mutex_lock");
+		}
+		
+		
+		
+		
+	}
+	
   // TODO:
   // while not all arrivals have been handled, repeatedly:
   //  - wait for an arrival using the semaphore for this traffic light
@@ -81,6 +103,10 @@ static void* manage_light(void* arg)
 
 int main(int argc, char * argv[])
 {
+	//BASIC SOLUTION
+	pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+
+	
   // create semaphores to wait/signal for arrivals
   for (int i = 0; i < 4; i++)
   {
