@@ -92,7 +92,6 @@ static void* manage_light(void* arg)
 			perror("pthread_mutex_unlock");
 		}
 	}
-	
 	pthread_exit(NULL);
 	
   // TODO:
