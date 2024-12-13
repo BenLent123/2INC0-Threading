@@ -84,6 +84,7 @@ static void* manage_light(void* arg)
 		}
 		//make traffic light turn green
 		
+		sleep(CROSS_TIME);
 		
 		
 		
