@@ -131,11 +131,12 @@ int main(int argc, char * argv[])
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 4; j++){
 			/* create a new thread that will execute 'do_loop()' */
-			thr_id = pthread_create(&p_thread[i][j], NULL, manage_light);
+			int args[3] = {i, j, (int)&m};
+			thr_id[i][j] = pthread_create(&p_thread[i][j], NULL, manage_light, (void*)args);
 			}
 	}
 
-	int thread_id = pthread_create(&supply_arrivals_thread, NULL, supply_arrivals);
+	int thread_id = pthread_create(&supply_arrivals_thread, NULL, supply_arrivals, NULL);
 	// TODO: create a thread that executes supply_arrivals
 
 	// TODO: wait for all threads to finish
