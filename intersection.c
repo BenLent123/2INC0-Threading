@@ -82,6 +82,7 @@ static void* manage_light(void* arg)
 		while (pthread_mutex_lock(&m)) { /* an error has occurred */
 			perror("pthread_mutex_lock");
 		}
+		//make traffic light turn green
 		
 		
 		
