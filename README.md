@@ -7,3 +7,8 @@ Our idea Threading advanced:
 
 make a matrix [i][j]-> moves claim the mutexs of their paths, so mutliple paths are allowed if the path mutex is free
 ![{EA18BDFD-1215-4078-93DA-430F6B2BD934}](https://github.com/user-attachments/assets/5ac844fb-3c1f-498e-bc12-72c062c78b30)
+
+### printing format
+```c++
+traffic light <side> <direction> turns green at time <t> for car <ID>
+```
