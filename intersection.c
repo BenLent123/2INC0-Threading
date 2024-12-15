@@ -29,6 +29,13 @@ static Arrival curr_arrivals[4][4][20];
  */
 static sem_t semaphores[4][4];
 
+// for manage light threads -> holds argumentss
+typedef struct {
+    Side side;
+    Direction direction;
+    pthread_mutex_t* intersection_mutex;
+} LightArgs;
+
 /*
  * supply_arrivals()
  *
@@ -66,10 +73,10 @@ static void* supply_arrivals()
  */
 static void* manage_light(void* arg)
 {
-
-    int side = ((int*)arg)[0];
-    int direction = ((int*)arg)[1];
-    pthread_mutex_t* intersection_mutex = (pthread_mutex_t*)(((int*)arg)+2);
+    LightArgs* args = (LightArgs*)arg;
+    Side side = args->side;
+    Direction direction = args->direction;
+    pthread_mutex_t* intersection_mutex = args->intersection_mutex;
     int car_index = 0;
 
     while (get_time_passed() < END_TIME)
@@ -97,6 +104,8 @@ static void* manage_light(void* arg)
         pthread_mutex_unlock(intersection_mutex);
     }
 
+    // frees memory
+    free(args);
     return NULL;
 	
   // TODO:
@@ -128,22 +137,31 @@ int main(int argc, char * argv[])
   
   
 	//Creates 16 threads, for now. INVESTIGATE HOW MANHY SHOULD BE MADE
-    int        thr_id[4][4];         /* thread ID for the newly created thread */
-    pthread_t  p_thread[4][4];       /* thread's structure                     */
-	pthread_t  supply_arrivals_thread;
-	for (int i = 0; i < 4; i++){
-		for (int j = 0; j < 4; j++){
-			/* create a new thread that will execute 'do_loop()' */
-			int args[3] = {i, j, (int)&m};
-			thr_id[i][j] = pthread_create(&p_thread[i][j], NULL, manage_light, (void*)args);
-			}
-	}
+  // Create threads for each traffic light
+  pthread_t light_threads[4][4];
+  for (int side = 0; side < 4; side++)
+  {
+      for (int direction = 0; direction < 4; direction++)
+      {
+          // Allocate memory for arguments
+          LightArgs* args = malloc(sizeof(LightArgs));
+          if (args == NULL) {
+              perror("Failed to allocate memory for thread arguments");
+              exit(EXIT_FAILURE);
+          }
+          args->side = side;
+          args->direction = direction;
+          args->intersection_mutex = &m;
 
-	int thread_id = pthread_create(&supply_arrivals_thread, NULL, supply_arrivals, NULL);
-	// TODO: create a thread that executes supply_arrivals
+          pthread_create(&light_threads[side][direction], NULL, manage_light, (void*)args);
+      }
+  }
 
-	// TODO: wait for all threads to finish
-	pthread_join(&supply_arrivals_thread, NULL);
+  // Create the supply arrivals thread
+  pthread_t supplier_thread;
+  pthread_create(&supplier_thread, NULL, supply_arrivals, NULL);
+
+	pthread_join(supplier_thread, NULL);
 
 	// Wait until END_TIME
     while (get_time_passed() < END_TIME)
@@ -154,8 +172,8 @@ int main(int argc, char * argv[])
 
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 4; j++){
-			/* create a new thread that will execute 'do_loop()' */
-			pthread_join(&p_thread[i][j], NULL);
+      pthread_cancel(light_threads[i][j]);
+			pthread_join(light_threads[i][j], NULL);
 			}
 	}
 
