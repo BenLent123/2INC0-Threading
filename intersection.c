@@ -206,8 +206,10 @@ int main(int argc, char * argv[])
 	//pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 	
 	//Advanced solution, 8 mutexes
-	pthread_mutex_t* m_exit_lanes[4];
-	pthread_mutex_t* m_squares[4];
+	pthread_mutex_t* mp_exit_lanes[4];
+	pthread_mutex_t* mp_squares[4];
+	pthread_mutex_t m_exit_lanes[4];
+	pthread_mutex_t m_squares[4];
 	
 	//The "square mutexes" are arranged spatially as (by the index you call them)
 	//   0 1
@@ -236,13 +238,16 @@ int main(int argc, char * argv[])
 
 	
 	for(int i = 0; i < 4; i++){
-		m_exit_lanes[i] = PTHREAD_MUTEX_INITIALIZER;
+		//m_exit_lanes[i] = PTHREAD_MUTEX_INITIALIZER;
+		pthread_mutex_init(&m_exit_lanes[i], NULL);
+		mp_exit_lanes[i] = &m_exit_lanes[i];
 	}
 	
 	for(int i = 0; i < 4; i++){
-		m_squares[i] = PTHREAD_MUTEX_INITIALIZER;
+		//m_squares[i] = PTHREAD_MUTEX_INITIALIZER;
+		pthread_mutex_init(&m_squares[i], NULL);
+		mp_squares[i] = &m_squares[i];
 	}
-	
 	
 	// create semaphores to wait/signal for arrivals
 	for (int i = 0; i < 4; i++){
@@ -254,58 +259,62 @@ int main(int argc, char * argv[])
 	// start the timer
 	start_time();
   
-  
 	//Creates 16 threads, for now. INVESTIGATE HOW MANHY SHOULD BE MADE
 	// Create threads for each traffic light
 	pthread_t light_threads[4][4];
-	for (int side = 0; side < 4; side++)
-	{
-      for (int direction = 0; direction < 4; direction++)
-      {
-          // Allocate memory for arguments
-          LightArgs* args = malloc(sizeof(LightArgs));
-          if (args == NULL) {
-              perror("Failed to allocate memory for thread arguments");
-              exit(EXIT_FAILURE);
-          }
-          args->side = side;
-          args->direction = direction;
-          args->m_exit_lanes = m_exit_lanes;
-          args->m_squares = m_squares;
+	for (int side = 0; side < 4; side++){
+		for (int direction = 0; direction < 4; direction++){
+			// Allocate memory for arguments
+			LightArgs* args = malloc(sizeof(LightArgs));
+			if (args == NULL) {
+				perror("Failed to allocate memory for thread arguments");
+				exit(EXIT_FAILURE);
+			}
+			args->side = side;
+			args->direction = direction;
+			args->m_exit_lanes = mp_exit_lanes;
+			args->m_squares = mp_squares;
 
-          pthread_create(&light_threads[side][direction], NULL, manage_light, (void*)args);
-      }
-  }
+			pthread_create(&light_threads[side][direction], NULL, manage_light, (void*)args);
+		}
+	}
 
-  // Create the supply arrivals thread
-  pthread_t supplier_thread;
-  pthread_create(&supplier_thread, NULL, supply_arrivals, NULL);
-
+	// Create the supply arrivals thread
+	pthread_t supplier_thread;
+	pthread_create(&supplier_thread, NULL, supply_arrivals, NULL);
+	
+	//Block on waiting for supplier thread to terminate
 	pthread_join(supplier_thread, NULL);
 
 	// Wait until END_TIME
-  while (get_time_passed() < END_TIME)
-  {
-      sleep(1);
-  }
-
-
-  // Nitin used: i: side && j: direction
-	for (int i = 0; i < 4; i++){
-		for (int j = 0; j < 4; j++){
-      pthread_cancel(light_threads[i][j]);
-			pthread_join(light_threads[i][j], NULL);
-			}
+	while (get_time_passed() < END_TIME){
+		sleep(1);
 	}
 
-  // destroy semaphores
-  for (int i = 0; i < 4; i++)
-  {
-    for (int j = 0; j < 4; j++)
-    {
-      sem_destroy(&semaphores[i][j]);
-    }
-  }
+
+	// Nitin used: i: side && j: direction
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			pthread_cancel(light_threads[i][j]);
+			pthread_join(light_threads[i][j], NULL);
+		}
+	}
+
+	// destroy semaphores
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			sem_destroy(&semaphores[i][j]);
+		}
+	}
+	
+	//Destroy mutexes
+	for(int i = 0; i < 4; i++){
+		pthread_mutex_destroy(&m_exit_lanes[i]);
+	}
+	
+	for(int i = 0; i < 4; i++){
+		pthread_mutex_destroy(&m_squares[i]);
+	}
 
   return 0;
 }
