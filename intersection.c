@@ -67,32 +67,37 @@ static void* supply_arrivals()
 static void* manage_light(void* arg)
 {
 
-  int* args = (int*)arg;
-	//extract args from arg pointer
-	int i = args[0];
-	int j = args[1];
-	int k = 0;
-  pthread_mutex_t* m = (pthread_mutex_t*)args[2];
-	
-	while(1){
-		//lane information is passed around as i,j
-		//Extract lane information. Access need not be mutxed
-		Arrival curr_arrival = curr_arrivals[i][j][k];
-	
-		//Wait on semaphore, which wraps an atomic expression
-		sem_wait(&semaphores[i][j]);
-		while (pthread_mutex_lock(&m)) { /* an error has occurred */
-			perror("pthread_mutex_lock");
-		}
-		//make traffic light turn green
-		
-		sleep(CROSS_TIME);
-		
-		while (pthread_mutex_unlock(&m)) { /* an error has occurred */
-			perror("pthread_mutex_unlock");
-		}
-	}
-	pthread_exit(NULL);
+    int side = ((int*)arg)[0];
+    int direction = ((int*)arg)[1];
+    pthread_mutex_t* intersection_mutex = (pthread_mutex_t*)(((int*)arg)+2);
+    int car_index = 0;
+
+    while (get_time_passed() < END_TIME)
+    {
+        // Wait for a car arrival
+        sem_wait(&semaphores[side][direction]);
+
+        // Lock the intersection mutex
+        pthread_mutex_lock(intersection_mutex);
+
+        // Get the arrival information
+        Arrival arrival = curr_arrivals[side][direction][car_index];
+        car_index++;
+
+        // Turn the traffic light green
+        printf("traffic light %d %d turns green at time %d for car %d\n", side, direction, get_time_passed(), arrival.id);
+
+        // Sleep for CROSS_TIME seconds
+        sleep(CROSS_TIME);
+
+        // Turn the traffic light red
+        printf("traffic light %d %d turns red at time %d\n", side, direction, get_time_passed());
+
+        // Unlock the intersection mutex
+        pthread_mutex_unlock(intersection_mutex);
+    }
+
+    return NULL;
 	
   // TODO:
   // while not all arrivals have been handled, repeatedly:
@@ -102,8 +107,6 @@ static void* manage_light(void* arg)
   //  - sleep for CROSS_TIME seconds
   //  - make the traffic light turn red
   //  - unlock the right mutex(es)
-
-  return(0);
 }
 
 
