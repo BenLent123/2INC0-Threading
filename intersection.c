@@ -144,6 +144,14 @@ int main(int argc, char * argv[])
 
 	// TODO: wait for all threads to finish
 	pthread_join(&supply_arrivals_thread, NULL);
+
+	// Wait until END_TIME
+    while (get_time_passed() < END_TIME)
+    {
+        sleep(1);
+    }
+
+
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 4; j++){
 			/* create a new thread that will execute 'do_loop()' */
@@ -159,4 +167,6 @@ int main(int argc, char * argv[])
       sem_destroy(&semaphores[i][j]);
     }
   }
+
+  return 0;
 }
