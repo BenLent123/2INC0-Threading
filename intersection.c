@@ -164,12 +164,13 @@ int main(int argc, char * argv[])
 	pthread_join(supplier_thread, NULL);
 
 	// Wait until END_TIME
-    while (get_time_passed() < END_TIME)
-    {
-        sleep(1);
-    }
+  while (get_time_passed() < END_TIME)
+  {
+      sleep(1);
+  }
 
 
+  // Nitin used: i: side && j: direction
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 4; j++){
       pthread_cancel(light_threads[i][j]);
