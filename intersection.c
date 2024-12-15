@@ -87,14 +87,60 @@ static void* manage_light(void* arg)
     
     //Extracts only the RELEVANT MUTEXES for each thread
     pthread_mutex_t* m_exit_lanes; 
-	pthread_mutex_t* m_squares[2];
+    m_exit_lanes = args->m_exit_lanes[exit_lane];
+
+	if((direction==0)||(direction==1)){//square mutex only needed for left and straight turns
+		pthread_mutex_t* m_squares_0;
+		pthread_mutex_t* m_squares_1;
+		int selector = side*10 + direction;
+	//Conversion chart thing
+	// {2:1} ---> {1,3}
+	// {2:0} ---> {0,2}
+	// {0:1} ---> {0,2}
+	// {0:0} ---> {1,3}
 	
-	m_exit_lanes = args->m_exit_lanes[exit_lane];
+	// {1:1} ---> {0,1}
+	// {1:0} ---> {2,3}
+	// {3:1} ---> {2,3}
+	// {3:0} ---> {0,1} 
+		switch(selector){
+			case 21: 
+				m_squares_0 = args->m_squares[1];
+				m_squares_1 = args->m_squares[3];
+			break;
+			case 20: 
+				m_squares_0 = args->m_squares[0];
+				m_squares_1 = args->m_squares[2];
+			break;
+			case 1: 
+				m_squares_0 = args->m_squares[0];
+				m_squares_1 = args->m_squares[2];
+			break;
+			case 0: 
+				m_squares_0 = args->m_squares[1];
+				m_squares_1 = args->m_squares[3];
+			break;
+			
+			case 11: 
+				m_squares_0 = args->m_squares[0];
+				m_squares_1 = args->m_squares[1];
+			break;
+			case 10: 
+				m_squares_0 = args->m_squares[2];
+				m_squares_1 = args->m_squares[3];
+			break;
+			case 31: 
+				m_squares_0 = args->m_squares[2];
+				m_squares_1 = args->m_squares[3];
+			break;
+			case 30: 
+				m_squares_0 = args->m_squares[0];
+				m_squares_1 = args->m_squares[1];
+			break;
+			}
+	
 		
-	
-	for(int i=0; i<4; i++){
-		m_squares[i] = args->m_squares[i];
-		}
+	}
 	
     int car_index = 0;
 
@@ -107,8 +153,12 @@ static void* manage_light(void* arg)
         Arrival arrival = curr_arrivals[side][direction][car_index];
         car_index++;
         
-        
-        
+        //lock the mutexes
+        pthread_mutex_lock(m_exit_lanes);
+        if((direction==0)||(direction==1)){
+			pthread_mutex_lock(m_squares_0);
+			pthread_mutex_lock(m_squares_1);
+		}
 
         // Lock the intersection mutex
         //pthread_mutex_lock(intersection_mutex);
@@ -125,7 +175,12 @@ static void* manage_light(void* arg)
         printf("traffic light %d %d turns red at time %d\n", side, direction, get_time_passed());
 
         // Unlock the intersection mutex
-        pthread_mutex_unlock(intersection_mutex);
+        //pthread_mutex_unlock(intersection_mutex);
+        pthread_mutex_unlock(m_exit_lanes);
+        if((direction==0)||(direction==1)){
+			pthread_mutex_unlock(m_squares_0);
+			pthread_mutex_unlock(m_squares_1);
+		}
     }
 
     // frees memory
@@ -164,18 +219,18 @@ int main(int argc, char * argv[])
 	
 	// {East:Straight} ---> {0,1}
 	// {East:Left} ---> {2,3}
-	// {West:Straight} ---> {0,2}
-	// {West:Left} ---> {1,3}
+	// {West:Straight} ---> {2,3}
+	// {West:Left} ---> {0,1}
 	//Converting to their encoding
 	// {2:1} ---> {1,3}
 	// {2:0} ---> {0,2}
 	// {0:1} ---> {0,2}
 	// {0:0} ---> {1,3}
 	
-	// {2:1} ---> {1,3}
-	// {2:0} ---> {0,2}
-	// {0:1} ---> {0,2}
-	// {0:0} ---> {1,3}
+	// {1:1} ---> {0,1}
+	// {1:0} ---> {2,3}
+	// {3:1} ---> {2,3}
+	// {3:0} ---> {0,1} 
 
 	
 	for(int i = 0; i < 4; i++){
