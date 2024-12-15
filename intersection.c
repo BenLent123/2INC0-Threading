@@ -33,7 +33,9 @@ static sem_t semaphores[4][4];
 typedef struct {
     Side side;
     Direction direction;
-    pthread_mutex_t* intersection_mutex;
+    //pthread_mutex_t* intersection_mutex;
+    pthread_mutex_t** m_exit_lanes;
+	pthread_mutex_t** m_squares;
 } LightArgs;
 
 /*
@@ -76,20 +78,42 @@ static void* manage_light(void* arg)
     LightArgs* args = (LightArgs*)arg;
     Side side = args->side;
     Direction direction = args->direction;
-    pthread_mutex_t* intersection_mutex = args->intersection_mutex;
+    //pthread_mutex_t* intersection_mutex = args->intersection_mutex;
+    
+    //Compute direction of exit lane
+    
+    int exit_lane = (side+direction+1)%4; //This actually works lol. Good thing they coded the directions conviniently.
+    //Obviously the exit lane is coded with the same NORTH = 0, EAST = 1, etc as the side
+    
+    //Extracts only the RELEVANT MUTEXES for each thread
+    pthread_mutex_t* m_exit_lanes; 
+	pthread_mutex_t* m_squares[2];
+	
+	m_exit_lanes = args->m_exit_lanes[exit_lane];
+		
+	
+	for(int i=0; i<4; i++){
+		m_squares[i] = args->m_squares[i];
+		}
+	
     int car_index = 0;
 
     while (get_time_passed() < END_TIME)
     {
         // Wait for a car arrival
         sem_wait(&semaphores[side][direction]);
-
-        // Lock the intersection mutex
-        pthread_mutex_lock(intersection_mutex);
-
+        
         // Get the arrival information
         Arrival arrival = curr_arrivals[side][direction][car_index];
         car_index++;
+        
+        
+        
+
+        // Lock the intersection mutex
+        //pthread_mutex_lock(intersection_mutex);
+
+        
 
         // Turn the traffic light green
         printf("traffic light %d %d turns green at time %d for car %d\n", side, direction, get_time_passed(), arrival.id);
@@ -122,7 +146,45 @@ static void* manage_light(void* arg)
 int main(int argc, char * argv[])
 {
 	//BASIC SOLUTION USES ONLY 1 MUTEX
-	pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+	//pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+	
+	//Advanced solution, 8 mutexes
+	pthread_mutex_t m_exit_lanes[4];
+	pthread_mutex_t m_squares[4];
+	
+	//The "square mutexes" are arranged spatially as (by the index you call them)
+	//   0 1
+	//   2 3
+	// 
+	// Usage example: {Side:Direction} --> {which mutexes are locked}
+	// {South:Straight} ---> {1,3}
+	// {South:Left} ---> {0,2}
+	// {North:Straight} ---> {0,2}
+	// {North:Left} ---> {1,3}
+	
+	// {East:Straight} ---> {0,1}
+	// {East:Left} ---> {2,3}
+	// {West:Straight} ---> {0,2}
+	// {West:Left} ---> {1,3}
+	//Converting to their encoding
+	// {2:1} ---> {1,3}
+	// {2:0} ---> {0,2}
+	// {0:1} ---> {0,2}
+	// {0:0} ---> {1,3}
+	
+	// {2:1} ---> {1,3}
+	// {2:0} ---> {0,2}
+	// {0:1} ---> {0,2}
+	// {0:0} ---> {1,3}
+
+	
+	for(int i = 0; i < 4; i++){
+		m_exit_lanes[i] = PTHREAD_MUTEX_INITIALIZER;
+	}
+	
+	for(int i = 0; i < 4; i++){
+		m_squares[i] = PTHREAD_MUTEX_INITIALIZER;
+	}
 	
 	
 	// create semaphores to wait/signal for arrivals
@@ -137,10 +199,10 @@ int main(int argc, char * argv[])
   
   
 	//Creates 16 threads, for now. INVESTIGATE HOW MANHY SHOULD BE MADE
-  // Create threads for each traffic light
-  pthread_t light_threads[4][4];
-  for (int side = 0; side < 4; side++)
-  {
+	// Create threads for each traffic light
+	pthread_t light_threads[4][4];
+	for (int side = 0; side < 4; side++)
+	{
       for (int direction = 0; direction < 4; direction++)
       {
           // Allocate memory for arguments
@@ -151,7 +213,8 @@ int main(int argc, char * argv[])
           }
           args->side = side;
           args->direction = direction;
-          args->intersection_mutex = &m;
+          args->m_exit_lanes = m_exit_lanes;
+          args->m_squares = m_squares;
 
           pthread_create(&light_threads[side][direction], NULL, manage_light, (void*)args);
       }
@@ -189,3 +252,38 @@ int main(int argc, char * argv[])
 
   return 0;
 }
+
+
+//////////////////////////////////////////
+
+//			||||
+//			<v>^ o
+//o		
+//-<					^-
+//-^					<-
+//->					v-
+//-v					>-
+//						o	
+//		 o	v<^>
+//			||||
+
+//rules:
+//U-turns: only block their exit lane --> 1 mutex per exit lane
+//rights: only blocks exit lane
+
+// The intersection can support right and u-turns however (they will block exit lanes though)
+// The intersection can only support the following situations (regarding the straight and left turns)
+//		1. Only 1 car in the intersection turning straight or left
+// 		2. One car comes from the north, the other from the south and BOTH turn straight
+// 		3. One car comes from the north, the other from the south and BOTH turn left
+//		4. Situation 2 or 3 but with "north" replaced by "east" and "south" replaced by "west"
+
+
+
+//straights: block adjacent straights (but not the opposite straight) + blocks all left turns (except from its own direction)
+
+//lefts: for leftward direction blocks all non u-turns + for rightward direction blocks left-turns + for forward direct, blocks right turns
+//lefts (rephrased): for leftward direction blocks all turns except right turn + blocks access to own direction's exit lane (except from leftward direction). 
+//lefts (rephrased again): for leftward direction blocks all turns except right turn + blocks left turns from adjacent directions but not from opposite direction. 
+
+
