@@ -87,11 +87,13 @@ static void* manage_light(void* arg)
     
     //Extracts only the RELEVANT MUTEXES for each thread
     pthread_mutex_t* m_exit_lanes; 
+    pthread_mutex_t* m_squares_0;
+	pthread_mutex_t* m_squares_1;
+    
     m_exit_lanes = args->m_exit_lanes[exit_lane];
 
 	if((direction==0)||(direction==1)){//square mutex only needed for left and straight turns
-		pthread_mutex_t* m_squares_0;
-		pthread_mutex_t* m_squares_1;
+		
 		int selector = side*10 + direction;
 	//Conversion chart thing
 	// {2:1} ---> {1,3}
@@ -204,8 +206,8 @@ int main(int argc, char * argv[])
 	//pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 	
 	//Advanced solution, 8 mutexes
-	pthread_mutex_t m_exit_lanes[4];
-	pthread_mutex_t m_squares[4];
+	pthread_mutex_t* m_exit_lanes[4];
+	pthread_mutex_t* m_squares[4];
 	
 	//The "square mutexes" are arranged spatially as (by the index you call them)
 	//   0 1
