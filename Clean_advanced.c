@@ -50,7 +50,7 @@ static void* manage_light(void* arg)
     int exit_lane = (side+direction+1)%4; //This actually works lol. Good thing they coded the directions conviniently. //Obviously the exit lane is coded with the same NORTH = 0, EAST = 1, etc as the side. //Extracts only the RELEVANT MUTEXES for each thread
     pthread_mutex_t* m_exit_lanes; 
     pthread_mutex_t* m_squares_0;
-	  pthread_mutex_t* m_squares_1;
+    pthread_mutex_t* m_squares_1;
     m_exit_lanes = args->m_exit_lanes[exit_lane];
   
 	if((direction==0)||(direction==1)){//square mutex only needed for left and straight turns	
