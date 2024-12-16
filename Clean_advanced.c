@@ -196,10 +196,10 @@ int main(int argc, char * argv[])
 	}
 
 	// notation used i: side && j: direction
-	for (int side = 0; side < 4; side++){
-		for (int direction = 0; direction < 4; direction++){
-			pthread_cancel(light_threads[side][direction]);
-			pthread_join(light_threads[side][direction], NULL);
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			pthread_cancel(light_threads[i][j]);
+			pthread_join(light_threads[i][j], NULL);
 		}
 	}
 
