@@ -103,9 +103,12 @@ static void* manage_light(void* arg)
         
         //lock the mutexes
         pthread_mutex_lock(m_exit_lanes);
+        perror("Lane %d locked",exit_lane);
         if((direction==0)||(direction==1)){
 			pthread_mutex_lock(m_squares_0);
+			perror("Square 0 locked");
 			pthread_mutex_lock(m_squares_1);
+			perror("Square 1 locked");
 		}
         // Turn the traffic light green
         printf("traffic light %d %d turns green at time %d for car %d\n", side, direction, get_time_passed(), arrival.id);
@@ -119,9 +122,12 @@ static void* manage_light(void* arg)
         // Unlock the intersection mutex
         //pthread_mutex_unlock(intersection_mutex);
         pthread_mutex_unlock(m_exit_lanes);
+        perror("Lane %d unlocked",exit_lane);
         if((direction==0)||(direction==1)){
 			pthread_mutex_unlock(m_squares_0);
+			perror("Square 0 unlocked");
 			pthread_mutex_unlock(m_squares_1);
+			perror("Square 1 unlocked");
 		}
     }
 

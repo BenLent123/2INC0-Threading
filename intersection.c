@@ -18,6 +18,7 @@
  * curr_arrivals[s][d] returns an array of all arrivals for the entry lane on side s for direction d,
  *   ordered in the same order as they arrived
  */
+ 
 static Arrival curr_arrivals[4][4][20];
 
 /*
@@ -141,7 +142,6 @@ static void* manage_light(void* arg)
 			break;
 			}
 	
-		
 	}
 	
     int car_index = 0;
@@ -157,9 +157,12 @@ static void* manage_light(void* arg)
         
         //lock the mutexes
         pthread_mutex_lock(m_exit_lanes);
+        //printf("Lane %d locked \n",exit_lane);
         if((direction==0)||(direction==1)){
 			pthread_mutex_lock(m_squares_0);
+			//printf("Square 0 locked \n");
 			pthread_mutex_lock(m_squares_1);
+			//printf("Square 1 locked \n");
 		}
 
         // Lock the intersection mutex
@@ -179,11 +182,14 @@ static void* manage_light(void* arg)
         // Unlock the intersection mutex
         //pthread_mutex_unlock(intersection_mutex);
         pthread_mutex_unlock(m_exit_lanes);
+        //printf("Lane %d unlocked \n",exit_lane);
         if((direction==0)||(direction==1)){
 			pthread_mutex_unlock(m_squares_0);
+			//printf("Square 0 unlocked \n");
 			pthread_mutex_unlock(m_squares_1);
+			//printf("Square 1 unlocked \n");
 		}
-    }
+	}
 
     // frees memory
     free(args);
