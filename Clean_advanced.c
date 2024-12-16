@@ -16,9 +16,8 @@ static sem_t semaphores[4][4];
 typedef struct {
     Side side;
     Direction direction;
-    //pthread_mutex_t* intersection_mutex;
     pthread_mutex_t** m_exit_lanes;
-	pthread_mutex_t** m_squares;
+    pthread_mutex_t** m_squares;
 } LightArgs;
 
 static void* supply_arrivals()
